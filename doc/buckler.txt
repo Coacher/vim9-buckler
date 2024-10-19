@@ -1,0 +1,41 @@
+*buckler.txt*    Buckler Plugin Documentation
+
+INTRODUCTION                                     *buckler-intro*
+    Buckler is a Vim plugin designed to enhance your editing experience by
+    providing additional functionalities such as clipboard management, history
+    tracking and register handling.
+
+INSTALLATION                                     *buckler-install*
+    To install Buckler, use your preferred Vim plugin manager. For example,
+    using vim-plug:
+
+        Plug 'Coacher/vim9-buckler'
+
+    After installing, make sure to run `:helptags ALL` to generate help tags
+    for the documentation.
+
+FEATURES                                         *buckler-features*
+    1. Clipboard Management:
+        - Automatically saves and syncs the clipboard register name.
+        - Syncs system clipboard with Vim registers on focus events.
+
+    2. History Tracking:
+        - Maintains a history of yanked text for easy retrieval.
+        - Syncs numbered registers with yank history.
+
+    3. Register Handling:
+        - Provides functions to get and set register contents.
+        - Syncs clipboard and unnamed registers with the "0" register.
+
+CONFIGURATION                                    *buckler-config*
+    Buckler can be configured by setting variables in your vimrc file:
+
+    let g:vim9buckler_sync_clipboard = 1
+        Enables synchronization of the system clipboard with Vim.
+
+    let g:vim9buckler_history_length = 100
+        Sets the maximum length of the yank history.
+
+SUPPORT                                          *buckler-support*
+    For support, please visit https://github.com/Coacher/vim9-buckler/issues
+
