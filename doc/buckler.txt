@@ -39,3 +39,4 @@ CONFIGURATION                                    *buckler-config*
 SUPPORT                                          *buckler-support*
     For support, please visit https://github.com/Coacher/vim9-buckler/issues
 
+vim:tw=78:sw=4:ft=help:norl:
