@@ -29,12 +29,8 @@ import autoload './buckler/visual.vim'
 
 augroup buckler_process_visual
 autocmd!
-autocmd ModeChanged  v*:* visual.ProcessModeChange()
-autocmd ModeChanged  V*:* visual.ProcessModeChange()
-autocmd ModeChanged *:* visual.ProcessModeChange()
-autocmd KeyInputPre  v* visual.ProcessKeyInput()
-autocmd KeyInputPre  V* visual.ProcessKeyInput()
-autocmd KeyInputPre * visual.ProcessKeyInput()
+autocmd ModeChanged [vV\x16]*:[^vV\x16]* visual.ProcessModeChange()
+autocmd KeyInputPre [vV\x16]* visual.ProcessKeyInput()
 augroup END
 
 import autoload './buckler/yank.vim'
