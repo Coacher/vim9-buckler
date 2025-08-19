@@ -14,8 +14,7 @@ export def ProcessKeyInput()
     # Therefore no visible change is made to the visually selected text
     # Forcibly sync the clipboard with the yank history to prevent this
     if (tolower(char) == 'p')
-        var register = v:register
-        if (register == '') || (register == clipboard.register)
+        if (v:register == '') || (v:register == clipboard.register)
             registers.SyncClipboardWithZero()
         endif
     endif
