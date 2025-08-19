@@ -12,7 +12,7 @@ export def ProcessTextYank()
         var register = v:event.regname
         var item = {value: getreg(register), type: v:event.regtype}
 
-        if (register == '') || (register == clipboard.register)
+        if (register == clipboard.register) || (register == '')
             # The default register was used, push an item to the yank history
             # Sync the numbered and clipboard registers with the yank history
             history.Push(item)
