@@ -12,12 +12,12 @@ export def ProcessTextYank()
         var register = v:event.regname
         var item = {value: getreg(register), type: v:event.regtype}
 
-        if (register == clipboard.register) || (register == '')
+        if clipboard.IsClipboardRegister(register)
             # The default register was used, push an item to the yank history
             # Sync the numbered and clipboard registers with the yank history
             history.Push(item)
-            registers.SyncNumberedWithHistory()
-            registers.SyncClipboardWithZero()
+            registers.SetNumberedFromHistory()
+            registers.SetClipboardFromZero()
         elseif register =~ '\d'
             # Numbered register was used, update the item in the yank history
             var idx = str2nr(register)
@@ -29,13 +29,13 @@ export def ProcessTextYank()
                 if history.Count() == 0
                     history.Push(item)
                 endif
-                registers.SyncClipboardWithZero()
+                registers.SetClipboardFromZero()
             endif
         else
-            registers.SyncClipboardWithZero()
+            registers.SetClipboardFromZero()
         endif
     else
-        registers.SyncNumberedWithHistory()
-        registers.SyncClipboardWithZero()
+        registers.SetNumberedFromHistory()
+        registers.SetClipboardFromZero()
     endif
 enddef

@@ -18,7 +18,7 @@ export def Set(idx: number, item: dict<string>)
 enddef
 
 export def Push(item: dict<string>)
-    # Push an item to the yank history truncating it
+    # Push an item to the yank history maintaining its length
     if !empty(item.value) && ((Count() == 0) || (Get() != item))
         insert(history, item)
         if Count() > g:vim9buckler_history_length

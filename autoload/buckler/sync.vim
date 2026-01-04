@@ -14,7 +14,7 @@ export def ProcessFocusGained()
     var item = registers.GetReg(clipboard.register)
     if item != contents
         history.Push(item)
-        registers.SyncNumberedWithHistory()
-        registers.SyncClipboardWithZero()
+        registers.SetNumberedFromHistory()
+        registers.SetClipboardFromZero()
     endif
 enddef

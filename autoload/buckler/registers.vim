@@ -13,22 +13,22 @@ export def SetReg(register: string, item: dict<string>)
     setreg(register, item.value, item.type)
 enddef
 
-export def SyncNumberedWithHistory()
-    # Sync the numbered registers with the yank history
+export def SetNumberedFromHistory()
+    # Set the numbered registers from the yank history
     for idx in range(min([history.Count(), 10]))
         SetReg(string(idx), history.Get(idx))
     endfor
 enddef
 
-export def SyncClipboardWithZero()
-    # Sync the unnamed and clipboard registers with the 0 register
+export def SetClipboardFromZero()
+    # Set the unnamed and clipboard registers from the 0 register
     setreg('', {points_to: '0'})
     if !empty(clipboard.register)
         SetReg(clipboard.register, GetReg('0'))
     endif
 enddef
 
-export def SetupHistoryOnVimEnter()
+export def SyncHistoryWithRegisters()
     # Push the numbered and clipboard registers to the yank history
     # Then update all the registers from the resulting yank history
     for idx in range(min([g:vim9buckler_history_length, 10]) - 1, 0, -1)
@@ -37,6 +37,6 @@ export def SetupHistoryOnVimEnter()
     if !empty(clipboard.register)
         history.Push(GetReg(clipboard.register))
     endif
-    SyncNumberedWithHistory()
-    SyncClipboardWithZero()
+    SetNumberedFromHistory()
+    SetClipboardFromZero()
 enddef
