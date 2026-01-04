@@ -13,11 +13,23 @@ export def SetReg(register: string, item: dict<string>)
     setreg(register, item.value, item.type)
 enddef
 
+export def ClearReg(register: string)
+    # Clear the given register
+    setreg(register, {})
+enddef
+
 export def SetNumberedFromHistory()
     # Set the numbered registers from the yank history
-    for idx in range(min([history.Count(), 10]))
+    var count = min([history.Count(), 10])
+    var idx = 0
+    while idx < count
         SetReg(string(idx), history.Get(idx))
-    endfor
+        idx += 1
+    endwhile
+    while idx < 10
+        ClearReg(string(idx))
+        idx += 1
+    endwhile
 enddef
 
 export def SetClipboardFromZero()
