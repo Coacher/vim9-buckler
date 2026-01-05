@@ -3,6 +3,9 @@ if exists('g:vim9buckler_loaded')
 elseif !has('vim9script')
     echoerr 'vim9-buckler requires vim9script feature enabled'
     finish
+elseif !has('patch-9.1.563')
+    echoerr 'vim9-buckler requires Vim >= 9.1.563'
+    finish
 endif
 
 vim9script
