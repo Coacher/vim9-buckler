@@ -2,10 +2,12 @@ vim9script
 
 export var register: string = ''
 
+var has_clipboard = has('clipboard')
+
 export def StoreClipboardName()
     # Store the configured clipboard register name
-    var names = split(&clipboard, ',')
-    if has('clipboard')
+    if has_clipboard
+        var names = split(&clipboard, ',')
         if index(names, 'unnamedplus') >= 0
             register = '+'
         elseif index(names, 'unnamed') >= 0
