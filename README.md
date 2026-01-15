@@ -9,7 +9,7 @@ See also [vim9-cutlass](https://github.com/Coacher/vim9-cutlass).
 Related plugins
 ===============
 
-* [yanky.nvim](https://github.com/gbprod/yanky.nvim) for Neovim.
+* [neovim-buckler](https://github.com/Coacher/neovim-buckler) for Neovim.
   Actively maintained.
 
 * [vim-yoink](https://github.com/svermeulen/vim-yoink) for Vim 8.
