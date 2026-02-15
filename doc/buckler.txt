@@ -1,42 +1,191 @@
-*buckler.txt*    Buckler Plugin Documentation
+*vim9-buckler.txt*            Maintain a linear yank history through registers
 
-INTRODUCTION                                     *buckler-intro*
-    Buckler is a Vim plugin designed to enhance your editing experience by
-    providing additional functionalities such as clipboard management, history
-    tracking and register handling.
+Author:  Coacher
+License: Same terms as Vim itself (see |license|)
 
-INSTALLATION                                     *buckler-install*
-    To install Buckler, use your preferred Vim plugin manager. For example,
-    using vim-plug:
+==============================================================================
+CONTENTS                                               *vim9-buckler-contents*
 
-        Plug 'Coacher/vim9-buckler'
+    1. Introduction .......................... |vim9-buckler-introduction|
+    2. Requirements .......................... |vim9-buckler-requirements|
+    3. Setup ................................. |vim9-buckler-setup|
+    4. Configuration ......................... |vim9-buckler-configuration|
+    5. How It Works .......................... |vim9-buckler-how-it-works|
+    6. Related Plugins ....................... |vim9-buckler-related-plugins|
+    7. About ................................. |vim9-buckler-about|
 
-    After installing, make sure to run `:helptags ALL` to generate help tags
-    for the documentation.
+==============================================================================
+INTRODUCTION                                       *vim9-buckler-introduction*
 
-FEATURES                                         *buckler-features*
-    1. Clipboard Management:
-        - Automatically saves and syncs the clipboard register name.
-        - Syncs system clipboard with Vim registers on focus events.
+vim9-buckler is a Vim9 plugin that maintains a linear yank history and
+automatically synchronizes it with the unnamed, numbered, and clipboard
+registers.
 
-    2. History Tracking:
-        - Maintains a history of yanked text for easy retrieval.
-        - Syncs numbered registers with yank history.
+The plugin ensures that your yank history stays consistent across all relevant
+registers, making it easier to work with multiple yanked items and providing
+seamless integration with the system clipboard.
 
-    3. Register Handling:
-        - Provides functions to get and set register contents.
-        - Syncs clipboard and unnamed registers with the "0" register.
+Key features:
+  • Maintains a linear history of yanked text
+  • Automatically synchronizes numbered registers (0-9) with history
+  • Integrates with system clipboard registers (* and +)
+  • Tracks clipboard changes when focus returns to Vim
+  • Handles visual mode paste operations intelligently
 
-CONFIGURATION                                    *buckler-config*
-    Buckler can be configured by setting variables in your vimrc file:
+For a complementary plugin that prevents delete/change operations from
+affecting registers, see https://github.com/Coacher/vim9-cutlass
 
-    let g:vim9buckler_sync_clipboard = 1
-        Enables synchronization of the system clipboard with Vim.
+==============================================================================
+REQUIREMENTS                                       *vim9-buckler-requirements*
 
-    let g:vim9buckler_history_length = 100
-        Sets the maximum length of the yank history.
+• Vim 9.1.563 or later
+• |vim9script| feature enabled
+• 'clipboard' feature (optional, for system clipboard synchronization)
 
-SUPPORT                                          *buckler-support*
-    For support, please visit https://github.com/Coacher/vim9-buckler/issues
+==============================================================================
+SETUP                                                     *vim9-buckler-setup*
 
+Simply install the plugin using your preferred plugin manager.
+
+To customize the plugin behavior, set the configuration variables in your
+|vimrc| before the plugin loads:
+>vim
+    vim9script
+    g:vim9buckler_history_length = 20
+    g:vim9buckler_sync_clipboard = v:true
+<
+Or if using legacy Vimscript:
+>vim
+    let g:vim9buckler_history_length = 20
+    let g:vim9buckler_sync_clipboard = v:true
+<
+==============================================================================
+CONFIGURATION                                     *vim9-buckler-configuration*
+
+vim9-buckler can be configured using the following optional global variables.
+
+                                               *g:vim9buckler_history_length*
+g:vim9buckler_history_length~
+    Type: number
+    Default: 10
+
+    Maximum number of items to store in the yank history. The history is
+    maintained as a linear buffer, with new yanks pushing out the oldest
+    entries when the limit is reached.
+
+    The numbered registers (0-9) are synchronized with the first 10 items of
+    the history, so setting this value lower than 10 will still only populate
+    that many numbered registers. Setting it higher than 10 allows you to
+    maintain a longer history internally, even though only the first 10 items
+    will be accessible through numbered registers.
+
+    Example:
+>vim
+    g:vim9buckler_history_length = 25
+<
+                                               *g:vim9buckler_sync_clipboard*
+g:vim9buckler_sync_clipboard~
+    Type: boolean
+    Default: |v:true|
+
+    Whether to automatically synchronize with the system clipboard when Vim
+    gains focus. When enabled, the plugin will detect if the clipboard
+    contents changed while you were focused on another application and add the
+    new content to the yank history.
+
+    This feature requires that Vim has clipboard support (see |+clipboard|)
+    and that the 'clipboard' option is configured to use either "unnamed" or
+    "unnamedplus".
+
+    Disable this if you don't want external clipboard changes to affect your
+    yank history.
+
+    Example:
+>vim
+    g:vim9buckler_sync_clipboard = v:false
+<
+==============================================================================
+HOW IT WORKS                                       *vim9-buckler-how-it-works*
+
+Register Synchronization~
+
+vim9-buckler maintains synchronization between multiple register types:
+
+1. Yank History - Internal linear history up to |g:vim9buckler_history_length|
+2. Numbered Registers - Registers "0 through "9 (see |quote_number|)
+3. Unnamed Register - Register "" (see |quote_quote|)
+4. Clipboard Registers - Registers "* and/or "+ (see |quotestar| |quoteplus|)
+
+The synchronization works as follows:
+
+• When you yank text to the unnamed register (default yank behavior), it is
+  added to the yank history, and all numbered registers are updated to reflect
+  the current history state.
+
+• The "0 register always contains the most recent yank.
+
+• Registers "1 through "9 contain progressively older yanks from the history.
+
+• The unnamed register "" points to "0.
+
+• If 'clipboard' is configured, the clipboard register is synced with "0.
+
+Yank Behavior~
+
+When yanking text:
+
+• If yanking to the unnamed/clipboard register, the text is added to the yank
+  history (unless it's identical to the most recent entry).
+
+• If yanking directly to a numbered register (e.g., "3y), the specified
+  history position is updated if it exists.
+
+• Yanking to "0 adds a new entry to the history.
+
+• After any yank, all numbered registers are synchronized with the history.
+
+Visual Mode Paste~
+
+When pasting in visual mode with |p|:
+
+• If pasting from the unnamed/clipboard register, the selected text is NOT
+  added to the yank history. This prevents the replaced text from polluting
+  your history during multiple paste operations.
+
+• The paste still works normally, replacing the selection.
+
+Clipboard Synchronization~
+
+When |g:vim9buckler_sync_clipboard| is enabled:
+
+• On |FocusLost|, the current clipboard contents are stored.
+
+• On |FocusGained|, the clipboard is checked for changes.
+
+• If the clipboard changed while focus was away (e.g., you copied text from
+  a web browser), the new content is added to the yank history.
+
+• This allows you to seamlessly integrate external clipboard operations into
+  your Vim yank workflow.
+
+==============================================================================
+RELATED PLUGINS                                 *vim9-buckler-related-plugins*
+
+vim9-cutlass~
+    https://github.com/Coacher/vim9-cutlass
+
+    A Vim9 plugin that prevents delete and change operations from affecting
+    registers. Works well with vim9-buckler to give you complete control over
+    what goes into your yank history.
+
+==============================================================================
+ABOUT                                                     *vim9-buckler-about*
+
+Find the latest version of vim9-buckler at:
+
+    https://github.com/Coacher/vim9-buckler
+
+Please report bugs and feature requests on the issue tracker.
+
+==============================================================================
 vim:tw=78:sw=4:ft=help:norl:
