@@ -6,13 +6,13 @@ License: Same terms as Vim itself (see |license|)
 ==============================================================================
 CONTENTS                                               *vim9-buckler-contents*
 
-    1. Introduction .......................... |vim9-buckler-introduction|
-    2. Requirements .......................... |vim9-buckler-requirements|
-    3. Setup ................................. |vim9-buckler-setup|
-    4. Configuration ......................... |vim9-buckler-configuration|
-    5. How It Works .......................... |vim9-buckler-how-it-works|
-    6. Related Plugins ....................... |vim9-buckler-related-plugins|
-    7. About ................................. |vim9-buckler-about|
+    1. Introduction ........................... |vim9-buckler-introduction|
+    2. Requirements ........................... |vim9-buckler-requirements|
+    3. Setup .................................. |vim9-buckler-setup|
+    4. Configuration .......................... |vim9-buckler-configuration|
+    5. How It Works ........................... |vim9-buckler-how-it-works|
+    6. Related Plugins ........................ |vim9-buckler-related-plugins|
+    7. About .................................. |vim9-buckler-about|
 
 ==============================================================================
 INTRODUCTION                                       *vim9-buckler-introduction*
