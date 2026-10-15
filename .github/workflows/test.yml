@@ -2,8 +2,9 @@ name: Test
 
 on:
   push:
+    branches: [ "master" ]
   pull_request:
-  workflow_dispatch:
+    branches: [ "master" ]
 
 permissions:
   contents: read
@@ -36,7 +37,7 @@ jobs:
       VIM_BIN: ${{ matrix.bin }}
       GVIM_BIN: gvim
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install ${{ matrix.pkg }}
         run: |
           sudo apt-get update
