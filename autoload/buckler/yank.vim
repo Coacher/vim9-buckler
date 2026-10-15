@@ -6,6 +6,15 @@ import autoload './registers.vim'
 import autoload './visual.vim'
 
 export def ProcessTextYank()
+    if mode() =~# "^[vVsS\x16\x13]"
+        # With 'guioptions' flags 'a' or 'P', visually selected text is yanked
+        # to the 'guioptions' register while still in Visual or Select mode,
+        # real yanks happen after leaving them. This is a selection not a yank,
+        # restore clipboard registers from the 0 register.
+        registers.SetClipboardFromZero()
+        return
+    endif
+
     var register = v:event.regname
     var item = {value: getreg(register), type: v:event.regtype}
 
