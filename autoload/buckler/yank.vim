@@ -41,6 +41,11 @@ export def ProcessTextYank()
             # yank history, warn user about a possible data loss on yank
             echomsg '"' .. register .. ' may be cleared after next yank'
         endif
+    else
+        # Named register is used but the 1 register is still overwritten
+        # on deletes and changes and 2-9 numbered registers are shifted,
+        # set the numbered registers from the yank history
+        registers.SetNumberedFromHistory()
     endif
     # Set the clipboard registers from the 0 register after all yanks
     registers.SetClipboardFromZero()
