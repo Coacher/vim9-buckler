@@ -200,7 +200,7 @@ const SCENARIOS = [
   ['mouse right click extend y', [':set mouse=a|none', '@drag|none', '@rightext|none', 'y|push']],
   ['mouse drag selectmode=mouse type', [':set mouse=a selectmode=mouse|none', 'yy|push', '@drag|none', "X\<Esc>|any", 'p|any']],
   # gVim modeless selection goes to the clipboard and is not recorded
-  ['mouse modeless', [':set mouse=|none', 'yy|push', '@modeless|known:none', 'p|known:paste']],
+  ['mouse modeless', [':set mouse=|none', 'yy|push', '@modeless|none', 'p|paste']],
   # Undo and redo
   ['undo delete', ['yy|push', 'jdd|push', 'u|none', 'p|paste']],
   ['redo delete', ['jdd|push', 'u|none', "\<C-R>|none", 'p|paste']],
@@ -216,7 +216,7 @@ const SCENARIOS = [
   ['repeat p', ['yy|push', 'jp|paste', '.|paste']],
   ['repeat insert', ["A!\<Esc>|none", 'j.|none']],
   # Vim repeats a Visual paste as a delete, the deleted text is recorded
-  ['repeat visual p', ['yy|push', 'jVp|paste', 'j.|known:none']],
+  ['repeat visual p', ['yy|push', 'jVp|paste', 'j.|none']],
   # Other applications
   ['external copy', ['yy|push', '@lost|none', '@copy|ext', '@gained|extplus', 'p|paste']],
   ['external select', ['yy|push', '@lost|none', '@select|ext', '@gained|extstar', 'p|paste']],
