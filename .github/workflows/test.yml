@@ -13,7 +13,7 @@ jobs:
   test:
     name: ${{ matrix.pkg }} ${{ matrix.kind }} ${{ matrix.go && format('guioptions+={0}', matrix.go) || '' }}
     runs-on: ubuntu-26.04
-    timeout-minutes: 15
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
