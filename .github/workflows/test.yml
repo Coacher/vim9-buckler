@@ -1,0 +1,50 @@
+name: Test
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.pkg }} ${{ matrix.kind }} ${{ matrix.go && format('guioptions+={0}', matrix.go) || '' }}
+    runs-on: ubuntu-26.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # GTK3 GUI with the X11 clipboard
+          - {pkg: vim-gtk3, bin: vim.gtk3, kind: vim, go: ''}
+          - {pkg: vim-gtk3, bin: vim.gtk3, kind: gvim, go: ''}
+          - {pkg: vim-gtk3, bin: vim.gtk3, kind: gvim, go: a}
+          - {pkg: vim-gtk3, bin: vim.gtk3, kind: gvim, go: A}
+          - {pkg: vim-gtk3, bin: vim.gtk3, kind: gvim, go: P}
+          - {pkg: vim-gtk3, bin: vim.gtk3, kind: gvim, go: aA}
+          - {pkg: vim-gtk3, bin: vim.gtk3, kind: gvim, go: aP}
+          - {pkg: vim-gtk3, bin: vim.gtk3, kind: gvim, go: AP}
+          - {pkg: vim-gtk3, bin: vim.gtk3, kind: gvim, go: aAP}
+          # No clipboard support
+          - {pkg: vim-nox, bin: vim.nox, kind: vim, go: ''}
+          - {pkg: vim, bin: vim.basic, kind: vim, go: ''}
+          # No vimscript, plugins are not loaded
+          - {pkg: vim-tiny, bin: vim.tiny, kind: startup, go: ''}
+    env:
+      VIM_BIN: ${{ matrix.bin }}
+      GVIM_BIN: gvim
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install ${{ matrix.pkg }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ${{ matrix.pkg }} xvfb xsel
+          "$VIM_BIN" --version | grep -E 'IMproved|patches|version|clipboard'
+      - name: Check startup
+        run: test/run.sh startup
+      - name: Run tests
+        if: matrix.kind != 'startup'
+        run: xvfb-run -a test/run.sh ${{ matrix.kind }} ${{ matrix.go }}
