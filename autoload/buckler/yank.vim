@@ -18,7 +18,7 @@ export def ProcessTextYank()
     var register = v:event.regname
     var item = {value: getreg(register), type: v:event.regtype}
 
-    if clipboard.IsClipboardRegister(register)
+    if clipboard.IsClipboardRegister(register)) || register == '"'
         # Clipboard register is used
         if tolower(visual.char) != 'p'
             # Real yank, push the item to the yank history
