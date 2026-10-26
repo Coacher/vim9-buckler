@@ -23,9 +23,9 @@ enddef
 export def SetClipboardFromZero()
     # Set the unnamed and clipboard registers from the 0 register
     setreg('', {points_to: '0'})
-    for register in clipboard.registers
-        SetReg(register, GetReg('0'))
-    endfor
+    if !empty(clipboard.register)
+        SetReg(clipboard.register, GetReg('0'))
+    endif
 enddef
 
 export def SyncHistoryWithRegisters()
