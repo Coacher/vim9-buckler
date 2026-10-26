@@ -32,6 +32,7 @@ export def ProcessTextYank()
             # yank history, warn user about a possible data loss on yank
             echomsg '"' .. register .. ' may be cleared after next yank'
         endif
+        registers.SetNumberedFromHistory()
     endif
     # Set the clipboard registers from the 0 register after all yanks
     registers.SetClipboardFromZero()
