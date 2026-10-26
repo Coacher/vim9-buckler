@@ -5,7 +5,7 @@ import autoload './history.vim'
 
 export def GetReg(register: string): dict<string>
     # Get a yank history item from the given register
-    return {value: getreg(register), type: getregtype(register)}
+    return history.Item(getreg(register), getregtype(register))
 enddef
 
 export def SetReg(register: string, item: dict<string>)
