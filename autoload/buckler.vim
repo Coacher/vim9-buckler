@@ -4,8 +4,7 @@ import autoload './buckler/clipboard.vim'
 
 augroup buckler_store_clipboard_name
 autocmd!
-autocmd VimEnter  *         clipboard.StoreClipboardName()
-autocmd OptionSet clipboard clipboard.StoreClipboardName()
+autocmd VimEnter * clipboard.StoreClipboardName()
 augroup END
 
 import autoload './buckler/registers.vim'
