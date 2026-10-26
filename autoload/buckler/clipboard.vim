@@ -19,6 +19,6 @@ export def StoreClipboardName()
 enddef
 
 export def IsClipboardRegister(name: string): bool
-    # Check if the given name is the clipboard register name
-    return (name == register) || (name == '')
+    # Check if the given name is the unnamed or the clipboard register name
+    return (name == register) || (name == '') || (name == '"')
 enddef
