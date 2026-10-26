@@ -15,13 +15,11 @@ export def ProcessTextYank()
             # Real yank, push the item to the yank history
             history.Push(item)
         endif
-        # Set the numbered registers from the yank history
-        registers.SetNumberedFromHistory()
     elseif register =~ '\d'
         # Numbered register is used
         var idx = str2nr(register)
         if history.Count() > idx
-            # Update the item in the yank history if it is present
+            # Set the item in the yank history if it is present
             history.Set(idx, item)
         elseif idx == 0
             # 0 register is used and the yank history is empty,
@@ -32,8 +30,7 @@ export def ProcessTextYank()
             # preserve the current valid history and show a warning
             echomsg 'Out-of-range yank history write attempt blocked'
         endif
-        registers.SetNumberedFromHistory()
     endif
-    # Set the clipboard registers from the 0 register after all yanks
+    registers.SetNumberedFromHistory()
     registers.SetClipboardFromZero()
 enddef
