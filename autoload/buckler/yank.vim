@@ -28,9 +28,9 @@ export def ProcessTextYank()
             # push the item to the yank history
             history.Push(item)
         else
-            # Other numbered register is used and it is missing from the
-            # yank history, warn user about a possible data loss on yank
-            echomsg '"' .. register .. ' may be cleared after next yank'
+            # Numbered register outside of the yank history is used,
+            # preserve the current valid history and show a warning
+            echomsg 'Out-of-range yank history write attempt blocked'
         endif
         registers.SetNumberedFromHistory()
     endif
