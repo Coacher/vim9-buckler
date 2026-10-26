@@ -7,7 +7,7 @@ import autoload './visual.vim'
 
 export def ProcessTextYank()
     var register = v:event.regname
-    var item = {value: getreg(register), type: v:event.regtype}
+    var item = history.Item(getreg(register), v:event.regtype)
 
     if clipboard.IsClipboardRegister(register)
         # Clipboard register is used

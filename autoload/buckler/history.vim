@@ -4,6 +4,11 @@ export var history: list<dict<string>>
 
 const null_entry = {value: null_string, type: null_string}
 
+export def Item(value: string, type: string): dict<string>
+    # Make a yank history item; empty text carries no type
+    return empty(value) ? null_entry : {value: value, type: type}
+enddef
+
 export def Count(): number
     # Count the number of items in the yank history
     return len(history)
