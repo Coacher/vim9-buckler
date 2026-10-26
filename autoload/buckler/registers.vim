@@ -31,7 +31,7 @@ enddef
 export def SyncHistoryWithRegisters()
     # Push the numbered and clipboard registers to the yank history
     # Then update all the registers from the resulting yank history
-    for idx in range(min([g:vim9buckler_history_length, 10]) - 1, 0, -1)
+    for idx in range(9, 0, -1)
         history.Push(GetReg(string(idx)))
     endfor
     if !empty(clipboard.register)
