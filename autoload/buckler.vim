@@ -19,7 +19,8 @@ if g:vim9buckler_sync_clipboard
 
     augroup buckler_sync_system_clipboard
     autocmd!
-    autocmd FocusGained * sync.ProcessFocusGained()
+    autocmd FocusGained *
+        \ if !empty(clipboard.registers) | sync.ProcessFocusGained() | endif
     augroup END
 endif
 
