@@ -107,11 +107,13 @@ value.
   their own, yanks and deletes of nothing into every kind of register,
   and operations on an empty line.
 * `settings`: each option that influences the operations, crossed with the
-  operation groups it can affect, including every `'clipboard'` value and
-  every `'guioptions'` autoselect flag, with the autoselect register
-  matching a `'clipboard'` register and not, the puts that show what a
-  selection left in the history, and Visual puts from every kind of
-  register over the selection an autoselect register offers.
+  operation groups it can affect, including every set of autoselect
+  flags, of `'clipboard'` in terminal Vim and of `'guioptions'` in gVim,
+  with every set of clipboard registers, each `'clipboard'` pair in either
+  order, as Vim reports the `*` copy of a selection before the `+` copy,
+  the puts that show what a selection left in the history, and Visual
+  puts from every kind of register over the selection an autoselect
+  register offers.
 * `clipboard`: text copied by another application around FocusLost and
   FocusGained, followed by a yank, a delete or a Visual put, including text
   equal to the head and to an older item, with and without a `'clipboard'`
@@ -129,11 +131,13 @@ value.
   changes, number increments, substitution, Replace mode and Insert mode
   deletions, between a yank and a put.
 * `mouse`: selections made by dragging, double and triple clicks and a
-  right click extension, followed by the keys that operate on them, the
-  middle button put, typing over a selection made with `'selectmode'`
-  `mouse`, and in gVim the same gestures as modeless selections and middle
-  button insertions, with and without `'guioptions'` `A` and `'clipboard'`
-  `unnamed`.
+  right click extension, followed by the keys that operate on them or a
+  click that ends them, the middle button put, typing over a selection
+  made with `'selectmode'` `mouse`, the same gestures and puts under every
+  set of autoselect flags with every set of clipboard registers, and in
+  gVim the gestures as modeless selections and middle button insertions
+  under every set of `'guioptions'` autoselect flags with every set of
+  clipboard registers.
 
 Plugin configurations live in the same file: `default` with the clipboard
 sync and `nosync` without it, which runs only the cases of the `clipboard`
@@ -200,10 +204,11 @@ Mouse gestures reach terminal Vim as the key codes it reads for presses and
 releases, positioned through `test_setmouse()`, and as the SGR terminal
 codes for drags, which carry their own position; gVim takes them through
 `test_gui_event()`. With the mouse disabled for the mode, gVim turns a
-gesture into a modeless selection, which the `'guioptions'` flag `A` makes
-Vim copy into the `*` register on the release, and the middle button
-inserts that register into the buffer, so these need no further mechanics.
-Terminal Vim leaves the modeless selection to the terminal emulator.
+gesture into a modeless selection, which the `'guioptions'` flags `a` and
+`A` make Vim copy into the `*` register on the release, and the middle
+button inserts that register into the buffer, so these need no further
+mechanics. Terminal Vim leaves the modeless selection to the terminal
+emulator.
 
 Running locally
 ---------------

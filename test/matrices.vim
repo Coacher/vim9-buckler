@@ -39,14 +39,17 @@ const fixture_names = keys(fx.fixtures)->sort()
 const seed_names = keys(fx.seeds)->sort()
 const lengths = [10, 15]
 
-const clipboards = [
-    '', 'unnamed', 'unnamedplus', 'unnamed,unnamedplus', 'unnamedplus,unnamed',
-    'autoselect', 'autoselectplus', 'autoselect,unnamed', 'autoselectplus,unnamedplus',
-    'autoselect,unnamedplus', 'autoselectplus,unnamed', 'autoselect,autoselectplus,unnamed',
-    'unnamed,unnamedplus,autoselect',
-    'exclude:.*', 'unnamedplus,exclude:.*',
-]
+const autoselect_flags = ['', 'autoselect', 'autoselectplus', 'autoselect,autoselectplus', 'autoselectplus,autoselect']
 const clipboard_registers = ['unnamed', 'unnamedplus', 'unnamed,unnamedplus', 'unnamedplus,unnamed']
+# Every set of autoselect flags with every set of clipboard registers, each
+# pair of flags in either order, as Vim reports the star copy of a selection
+# before the plus copy and only the copies into a clipboard register are
+# items, then the values that keep Vim away from the display
+const clipboards = autoselect_flags
+    ->mapnew((_, flags) => mapnew([''] + clipboard_registers,
+        (_, names) => join(filter([flags, names], (_, value) => !empty(value)), ',')))
+    ->flattennew()
+    + ['exclude:.*', 'unnamedplus,exclude:.*']
 # The 'clipboard' values the focus events run under: the plugin watches a
 # register under the first four and nothing without one
 const focus_clipboards = clipboard_registers + ['']
@@ -1012,27 +1015,45 @@ const gestures: dict<list<list<any>>> = {
 
 const middle_click: list<list<any>> = [['middle', 2, 3], ['release', 2, 3]]
 
+const end_click: list<list<any>> = [['left', 2, 1], ['release', 2, 1]]
+
+# Keys that operate on the selection, and a click that ends it
 const gesture_followups: list<list<any>> = [
-    ["\<Esc>"], ['y'], ['d'], ["cNEW\<Esc>"], [Put('p')], ["\<Esc>", 'p'], ['y', 'p'],
+    ["\<Esc>"], ['y'], ['d'], ["cNEW\<Esc>"], [Put('p')], ["\<Esc>", 'p'], ['y', 'p'], [Gesture(end_click), 'p'],
 ]
 
+# The ways to autoselect a selection made with the mouse, each with every
+# set of clipboard registers: the 'clipboard' flags in terminal Vim and the
+# 'guioptions' flags in gVim, without A, which serves the modeless
+# selection only
+const mouse_autoselects: list<dict<any>> = filter(copy(clipboards), (_, value) => !empty(value) && value !~ 'exclude')
+    ->mapnew((_, value) => ({clipboard: value}))
+    + Product([['guioptions', ['', 'a', 'P', 'aP']], ['clipboard', focus_clipboards]])
+        ->filter((_, variant) => !empty(variant.guioptions) || !empty(variant.clipboard))
+
 # With the mouse disabled for the mode, gVim turns the same gestures into a
-# modeless selection, which the 'guioptions' flag A makes Vim copy into the
-# star register on the release without a TextYankPost event; without the
-# flag the selection is only highlighted.  A middle click inserts the star
-# register into the buffer.  The 'clipboard' values vary what else the star
-# register serves.
-const modeless_settings: dict<dict<any>> = {
-    plain: {mouse: '', guioptions: default_guioptions, clipboard: ''},
-    autoselect: {mouse: '', guioptions: 'A' .. default_guioptions, clipboard: ''},
-    unnamed: {mouse: '', guioptions: default_guioptions, clipboard: 'unnamed'},
-    unnamed_autoselect: {mouse: '', guioptions: 'A' .. default_guioptions, clipboard: 'unnamed'},
-}
+# modeless selection, which the 'guioptions' flags a and A make Vim copy
+# into the star register on the release without a TextYankPost event;
+# without them the selection is only highlighted.  A middle click inserts
+# the star register into the buffer.  Every set of the autoselect flags is
+# crossed with every set of clipboard registers, which vary what else the
+# star register serves.
+const modeless_variants: list<dict<any>> = Product([['guioptions', guioptions], ['clipboard', focus_clipboards]])
 
 # Operations that write a register, as the bypass writes are followed by
 const modeless_followups: list<list<any>> = [
     ['yy'], ['dd'], ['yiw', 'p'], ["ciwNEW\<Esc>"],
 ]
+
+# The settings of a variant over the given ones, its 'guioptions' flags
+# added to the defaults
+def VariantSettings(base: dict<any>, variant: dict<any>): dict<any>
+    var settings = extend(copy(base), variant)
+    if has_key(variant, 'guioptions')
+        settings.guioptions = variant.guioptions .. default_guioptions
+    endif
+    return settings
+enddef
 
 def MouseCases(ctx: dict<any>): list<dict<any>>
     var cases: list<dict<any>> = []
@@ -1071,27 +1092,48 @@ def MouseCases(ctx: dict<any>): list<dict<any>>
         }))
     endfor
     for combo in Product([
-            ['variant', keys(modeless_settings)->sort()],
+            ['variant', mouse_autoselects],
             ['gesture', keys(gestures)->sort()],
-            ['followup', modeless_followups],
-            ['fixture', ['ascii', 'multibyte']],
+            ['followup', gesture_followups],
     ])
-        var parts = ['modeless', combo.variant, combo.gesture]
-            + mapnew(Steps(combo.followup), (_, s) => StepText(s)) + [combo.fixture]
+        var parts = ['autoselect', SettingsId(combo.variant), combo.gesture]
+            + mapnew(Steps(combo.followup), (_, s) => StepText(s))
         add(cases, Case('mouse', parts, {
-            fixture: combo.fixture,
-            settings: modeless_settings[combo.variant],
+            settings: VariantSettings({mouse: 'a', mousemodel: 'extend'}, combo.variant),
             steps: ['yy', Gesture(gestures[combo.gesture])] + combo.followup,
         }))
     endfor
     for combo in Product([
-            ['variant', keys(modeless_settings)->sort()],
+            ['variant', mouse_autoselects],
+            ['builder', ['yy', 'yiw', 'dd', '"ayy']],
+    ])
+        add(cases, Case('mouse', ['autoselect', SettingsId(combo.variant), 'middle', combo.builder], {
+            settings: VariantSettings({mouse: 'a', mousemodel: 'extend'}, combo.variant),
+            steps: [combo.builder, Gesture(middle_click)],
+        }))
+    endfor
+    for combo in Product([
+            ['variant', modeless_variants],
+            ['gesture', keys(gestures)->sort()],
+            ['followup', modeless_followups],
+            ['fixture', ['ascii', 'multibyte']],
+    ])
+        var parts = ['modeless', SettingsId(combo.variant), combo.gesture]
+            + mapnew(Steps(combo.followup), (_, s) => StepText(s)) + [combo.fixture]
+        add(cases, Case('mouse', parts, {
+            fixture: combo.fixture,
+            settings: VariantSettings({mouse: ''}, combo.variant),
+            steps: ['yy', Gesture(gestures[combo.gesture])] + combo.followup,
+        }))
+    endfor
+    for combo in Product([
+            ['variant', modeless_variants],
             ['builder', ['yy', 'yiw', 'dd', '"ayy']],
             ['fixture', ['ascii', 'multibyte']],
     ])
-        add(cases, Case('mouse', ['modeless', combo.variant, 'middle', combo.builder, combo.fixture], {
+        add(cases, Case('mouse', ['modeless', SettingsId(combo.variant), 'middle', combo.builder, combo.fixture], {
             fixture: combo.fixture,
-            settings: modeless_settings[combo.variant],
+            settings: VariantSettings({mouse: ''}, combo.variant),
             steps: [combo.builder, Gesture(middle_click)],
         }))
     endfor
