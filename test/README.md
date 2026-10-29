@@ -244,6 +244,11 @@ every fed key, so the log drops the escape sequences and control characters
 once Vim exits and keeps the messages of a process that stopped without a
 report.
 
+`harness.vim` records known failures, which it recognizes from the copies
+Vim reports in the run without the plugin. A case that meets one counts as
+known rather than failed while it fails, unless the harness could not drive
+it, and fails the run once it passes, so that the record goes with the fix.
+
 Distribution coverage
 ---------------------
 

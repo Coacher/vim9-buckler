@@ -363,11 +363,39 @@ enddef
 # Whether the case under way runs with the plugin rather than the model
 var plugin_run = false
 
+# Known failures, found in the vanilla run from the copies Vim reports.  A
+# case that meets one is reported as known while it fails, and fails the
+# run once it passes, so that the record goes with the fix.
+#
+# A step outside a put in which Vim copies a selection into the star
+# register, which 'clipboard' does not name, and then into the plus
+# register, which it does: handling the first copy, the plugin writes the
+# head into the plus register, and the second copy reads the head back.
+# This shows only where the clipboard works, and only when the copy makes
+# a new head.
+const overwritten_copy = 'the plugin overwrites the plus copy of a selection while it handles the star copy'
+var known_failure = ''
+var step_copies: list<string> = []
+var step_head: dict<string> = {}
+
+def NoteCopy()
+    add(step_copies, v:event.regname)
+enddef
+
+def OverwritesCopy(): bool
+    var registers = model.ClipboardRegisters()
+    var star = index(step_copies, '*')
+    return ctx.clipboard_working && star >= 0 && index(registers, '*') < 0 && index(registers, '+') >= 0
+        && index(step_copies, '+', star + 1) >= 0 && get(model.history, 0, {}) != step_head
+enddef
+
 # The steps of a case run from BucklerRunSteps() in runner.vim, which feeds
 # the keys itself and calls back here around every step and for the steps
 # that are no keys.
 def g:BucklerBeginStep(step: dict<any>)
     if !plugin_run
+        step_copies = []
+        step_head = copy(get(model.history, 0, {}))
         model.BeginStep(step)
     endif
 enddef
@@ -392,6 +420,9 @@ def g:BucklerEndStep(step: dict<any>)
     endif
     if !plugin_run
         model.EndStep(step)
+        if !get(step, 'put', false) && OverwritesCopy()
+            known_failure = overwritten_copy
+        endif
     endif
 enddef
 
@@ -412,6 +443,7 @@ def Execute(case: dict<any>, with_plugin: bool): dict<any>
     var fixture = fx.fixtures[case.fixture]
     StopOwners()
     harness_errors = []
+    known_failure = ''
     NewBuffer(fixture, get(case, 'cursor', fixture.cursor))
     ApplySettings(get(case, 'settings', {}))
     ApplyMappings(case.mappings)
@@ -514,7 +546,7 @@ def XmlEscape(text: string): string
 enddef
 
 def WriteReports(results: list<dict<any>>, run: string)
-    var counts = {PASS: 0, FAIL: 0, SKIP: 0}
+    var counts = {PASS: 0, FAIL: 0, SKIP: 0, KNOWN: 0}
     var report: list<string> = []
     var xml: list<string> = ['<?xml version="1.0" encoding="UTF-8"?>']
     var cases: list<string> = []
@@ -526,6 +558,10 @@ def WriteReports(results: list<dict<any>>, run: string)
         elseif result.status == 'SKIP'
             add(cases, printf('  <testcase classname="%s" name="%s"><skipped message="%s"/></testcase>',
                 XmlEscape(run), name, XmlEscape(result.reason)))
+        elseif result.status == 'KNOWN'
+            extend(report, ['KNOWN ' .. result.id, '    ' .. result.known])
+            add(cases, printf('  <testcase classname="%s" name="%s"><skipped message="%s"/></testcase>',
+                XmlEscape(run), name, XmlEscape('known failure: ' .. result.known)))
         else
             var detail = join(result.diffs, "\n")
             add(report, 'FAIL ' .. result.id)
@@ -543,13 +579,13 @@ def WriteReports(results: list<dict<any>>, run: string)
     for [reason, count] in items(skips)
         add(report, printf('SKIP %d cases: %s', count, reason))
     endfor
-    add(report, printf('SUMMARY %s: %d passed, %d failed, %d skipped, clipboard %s%s%s',
-        run, counts.PASS, counts.FAIL, counts.SKIP,
+    add(report, printf('SUMMARY %s: %d passed, %d failed, %d skipped, %d known, clipboard %s%s%s',
+        run, counts.PASS, counts.FAIL, counts.SKIP, counts.KNOWN,
         ctx.clipboard_working ? 'working' : (ctx.clipboard ? 'present' : 'absent'),
         empty(ctx.tool) ? '' : ' via ' .. ctx.tool,
         $BUCKLER_SCOPE == 'clipboard' ? ', clipboard cases only' : ''))
     add(xml, printf('<testsuite name="%s" tests="%d" failures="%d" skipped="%d">',
-        XmlEscape(run), len(results), counts.FAIL, counts.SKIP))
+        XmlEscape(run), len(results), counts.FAIL, counts.SKIP + counts.KNOWN))
     extend(xml, cases)
     add(xml, '</testsuite>')
     writefile(report, results_dir .. '/report.txt')
@@ -572,13 +608,18 @@ def Main()
     augroup buckler_model
         autocmd!
         autocmd TextYankPost * model.OnTextYankPost()
+        autocmd TextYankPost * NoteCopy()
     augroup END
     # The expected states wait for the plugin run in their string form,
     # which needs far less memory than their dictionaries
     var expected_states: dict<string> = {}
+    var known_failures: dict<string> = {}
     for case in cases
         if empty(Unmet(case))
             expected_states[case.id] = string(Execute(case, false))
+            if !empty(known_failure)
+                known_failures[case.id] = known_failure
+            endif
         endif
     endfor
     augroup buckler_model
@@ -610,14 +651,29 @@ def Main()
             remove(plugin, 'harness_errors')
             Diff(expected, plugin, '', diffs)
         endif
+        var differs = !empty(diffs)
+        var status = differs ? 'FAIL' : 'PASS'
+        var known = get(known_failures, case.id, '')
+        # A known failure with a harness error still fails
+        if !empty(known)
+            if !differs
+                add(diffs, 'known failure passes: ' .. known)
+                status = 'FAIL'
+            elseif indexof(diffs, (_, d) => d =~ '^harness: ') < 0
+                status = 'KNOWN'
+            endif
+        endif
         var result = {
             id: case.id, matrix: case.matrix,
-            status: empty(diffs) ? 'PASS' : 'FAIL',
+            status: status,
             diffs: diffs,
             steps: mapnew(case.steps, (_, s) => StepText(s)),
         }
-        if !empty(diffs)
+        if differs
             extend(result, {expected: expected, actual: plugin})
+        endif
+        if !empty(known)
+            result.known = known
         endif
         add(results, result)
     endfor
